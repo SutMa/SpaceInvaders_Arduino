@@ -1,4 +1,5 @@
 
+import * as Tone from 'tone';
 
 let canvas;
 let player;
@@ -29,6 +30,7 @@ let pauseMode = false;
 let pauseTime = 0;
 let gameOverBool = false;
 let isThereARedAlien = false;
+let synth;
 
 
 
@@ -43,6 +45,7 @@ function preload() {
 }
 
 function setup() {
+  synth = new Tone.Synth().toDestination();
   canvas = createCanvas(400, 400);
   canvas.id('spaceInvaders');
   noSmooth(); 
@@ -230,6 +233,10 @@ function hitAlien() {
         alien.alive = false;
         shot.hit = true;
         score += alien.points; 
+        const now = Tone.now()
+        synth.triggerAttackRelease("C4", "8n", now)
+        synth.triggerAttackRelease("E4", "8n", now + 0.2)
+        synth.triggerAttackRelease("G4", "8n", now + .4)
       }
     }
   }
