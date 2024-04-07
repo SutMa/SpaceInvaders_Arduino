@@ -1,6 +1,4 @@
 
-import * as Tone from 'tone';
-
 let canvas;
 let player;
 let green;
@@ -30,7 +28,10 @@ let pauseMode = false;
 let pauseTime = 0;
 let gameOverBool = false;
 let isThereARedAlien = false;
-let synth;
+
+
+// Initialize a Tone.js Synthesizer
+const synth = new Tone.Synth().toDestination();
 
 
 
@@ -45,7 +46,9 @@ function preload() {
 }
 
 function setup() {
-  synth = new Tone.Synth().toDestination();
+
+ 
+
   canvas = createCanvas(400, 400);
   canvas.id('spaceInvaders');
   noSmooth(); 
@@ -233,10 +236,11 @@ function hitAlien() {
         alien.alive = false;
         shot.hit = true;
         score += alien.points; 
-        const now = Tone.now()
-        synth.triggerAttackRelease("C4", "8n", now)
-        synth.triggerAttackRelease("E4", "8n", now + 0.2)
-        synth.triggerAttackRelease("G4", "8n", now + .4)
+
+        const now = Tone.now();
+        synth.triggerAttackRelease("G4", "16n", now);
+        synth.triggerAttackRelease("E4", "16n", now + 0.2);
+        synth.triggerAttackRelease("C4", "16n", now + 0.4);        
       }
     }
   }
@@ -326,6 +330,10 @@ function hitPlayer() {
       laser.used = true; // that laser is now used and can't hit player again, or be drawn
       if (player.lives > 0) {
         lifeLost();
+        const now = Tone.now();
+        synth.triggerAttackRelease("A3", "8n", now);
+        synth.triggerAttackRelease("C4", "8n", now + 0.5);
+        synth.triggerAttackRelease("E4", "8n", now + 1.0);
       }
       if (player.lives == 0) {
         gameOver();
