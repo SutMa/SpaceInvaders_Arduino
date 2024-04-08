@@ -29,8 +29,10 @@ let pauseTime = 0;
 let gameOverBool = false;
 let isThereARedAlien = false;
 
+let serial;
 
-// Initialize a Tone.js Synthesizer
+
+
 const synth = new Tone.Synth().toDestination();
 
 
@@ -47,7 +49,9 @@ function preload() {
 
 function setup() {
 
- 
+  serial = new p5.SerialPort();  
+  serial.open("/dev/tty.usbmodem1101");  
+  serial.on('data', serialEvent);
 
   canvas = createCanvas(400, 400);
   canvas.id('spaceInvaders');
@@ -61,6 +65,37 @@ function setup() {
   createAllAliens();
   imageMode(CENTER);
   setInterval(createRedAlien, 30000);
+}
+
+
+function serialEvent() {
+  var dataString = serial.readLine(); 
+  if (dataString.length > 0) {
+    var sensors = split(trim(dataString), ','); 
+    if (sensors.length >= 3) {
+      let joystickX = int(sensors[0]);
+      let buttonState = sensors[2];
+
+      
+      let movement = map(joystickX, 0, 1023, -1, 1);
+
+      
+      let deadZone = 0.1;
+
+      if (movement < -deadZone) {
+        player.changeDirection('left');
+      } else if (movement > deadZone) {
+        player.changeDirection('right');
+      } else {
+        player.changeDirection('none');
+      }
+
+      
+      if (buttonState == '1') { 
+        player.fire();
+      }
+    }
+  }
 }
 
 function draw() {
@@ -293,7 +328,7 @@ function moveAllLasers() {
   }
 }
 
-// draws score to screen
+
 function drawScore() {
   noStroke();
   fill(255);
@@ -301,14 +336,14 @@ function drawScore() {
   textAlign(LEFT);
   text('LIVES: ', width - 175, 28);
   text('SCORE:', 25, 28);
-  // makes score red if it has surpased the previous high score
+  
   if (highScore > 0 && score > highScore) {
     fill(red);
   }
   text(score, 85, 28);
 }
 
-// checks if player was hit
+
 function hitPlayer() {
   for (let laser of lasers) {
     let leftEdgeOfLaser = laser.x - 2;
@@ -327,7 +362,7 @@ function hitPlayer() {
       backOfLaser < backOfShip &&
       !laser.used) {
       print('player hit!!!');
-      laser.used = true; // that laser is now used and can't hit player again, or be drawn
+      laser.used = true; 
       if (player.lives > 0) {
         lifeLost();
         const now = Tone.now();
@@ -342,21 +377,22 @@ function hitPlayer() {
   }
 }
 
-// functio level up
+
 function levelUp() {}
 
-// function life lost
+
 function lifeLost() {
   pauseTime = frameCount;
   print('life lost!');
   player.color = red;
   pauseMode = true;
+  serial.write('1');
 }
 
-// animates a new life
+
 function animateNewLife() {
   print('animating new life');
-  //  makes the player blink for 30 frames
+  
   if ((frameCount - pauseTime > 5 && frameCount - pauseTime < 10) ||
     (frameCount - pauseTime > 15 && frameCount - pauseTime < 20) ||
     (frameCount - pauseTime > 25 && frameCount - pauseTime < 30)
@@ -364,32 +400,31 @@ function animateNewLife() {
     noStroke();
     fill(bgColor);
     rectMode(CENTER);
-    // draws background colored rectangle over player to make it appear as if it's blinking
+  
     rect(player.x, player.y - 4,
       player.shipWidth + 2, player.shipHeight + 8);
   }
-  // after 30 frames, resets player with new life
+  
   if (frameCount - pauseTime > 30) {
     player.color = green;
     player.x = width / 2;
     pauseMode = false;
     player.lives -= 1;
-    // clears all current lasers
-    // or else player could get hit with laser as soon as they respawn with their new life in the center, which is unfair
+
     for (let laser of lasers) {
       laser.used = true;
     }
-    // clears all current shots too
+  
     for (let shot of shots) {
       shot.hit = true;
     }
   }
 }
 
-// clears all current lasers
+
 function clearAllLasers() {}
 
-// function game over
+
 function gameOver() {
   gameOverBool = true;
   background(0, 125);
@@ -410,7 +445,7 @@ function gameOver() {
   noLoop();
 }
 
-// resets game
+
 function reset() {
   highScore = score;
   score = 0;
@@ -419,28 +454,28 @@ function reset() {
   for (let laser of lasers) {
     laser.used = true;
   }
-  // clears all current shots too
+
   for (let shot of shots) {
     shot.hit = true;
   }
   loop();
 }
 
-// create red alien
+
 function createRedAlien() {
   redAlienUFOThing = new RedAlien();
   isThereARedAlien = true;
   print('red alien created!');
 }
 
-// moves red alien only if one exists
+
 function moveRedAlien() {
   if (isThereARedAlien) {
     redAlienUFOThing.move();
   }
 }
 
-// draws red alien only if one exists
+
 function drawRedAlien() {
   if (isThereARedAlien) {
     redAlienUFOThing.draw();
@@ -458,7 +493,7 @@ function hitRedAlien() {
       ) {
         redAlienUFOThing.alive = false;
         shot.hit = true;
-        score += redAlienUFOThing.points; // increases score when an alien is shot
+        score += redAlienUFOThing.points; 
       }
     }
   }
